@@ -6,6 +6,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define FUNCTION_START '{'
+#define FUNCTION_END '}'
 #define STR_DELIM '\''
 #define STACKSTR_DELIM '"'
 #define COMMENT_DELIM '\\'
@@ -59,7 +61,7 @@ static ParseFunc jumptable[128] = {
 	[STACKSTR_DELIM] = parse_stackstring,
 	[STR_DELIM] = parse_string,
 	[COMMENT_DELIM] = parse_comment,
-	['{'] = parse_function,
+	[FUNCTION_START] = parse_function,
 	['+'] = parse_function,
 	['-'] = parse_function,
 	['*'] = parse_function,
@@ -116,7 +118,7 @@ stackstring_end(int c)
 static int
 function_end(int c)
 {
-	return c == '}';
+	return c == FUNCTION_END;
 }
 
 static int
@@ -138,7 +140,7 @@ parse_until(FILE *fp, Stack *s, int (*stop_cond)(int))
 			continue;
 
 		if ((c >= 0 && c < 128 && jumptable[c] != NULL)) {
-			if (c != STACKSTR_DELIM || c != STR_DELIM || c != COMMENT_DELIM)
+			if (c != STACKSTR_DELIM && c != STR_DELIM && c != COMMENT_DELIM)
 				ungetc(c, fp);
 
 			if ((t = jumptable[c](fp))) {
@@ -150,7 +152,7 @@ parse_until(FILE *fp, Stack *s, int (*stop_cond)(int))
 				} else if (t->type == TOKEN_NUMBER) {
 					fprintf(stderr, "Parsed number: %g\n", t->num);
 				} else if (t->type == TOKEN_FUNCTION) {
-					fprintf(stderr, "Parsed operator\n");
+					fprintf(stderr, "Parsed function\n");
 				}
 			}
 		} else {
@@ -309,7 +311,7 @@ parse_stackstring(FILE *fp)
 	if (parse_until(fp, s, stackstring_end) != STACKSTR_DELIM)
 		ERROR("Unterminated string literal\n");
 
-	/* Consume the closing brace */
+	/* Consume the closing quote */
 	fgetc(fp);
 
 	t->stack = s;
@@ -337,7 +339,7 @@ parse_function(FILE *fp)
 	s->top = NULL;
 	s->size = 0;
 
-	if (parse_until(fp, s, function_end) != '}')
+	if (parse_until(fp, s, function_end) != FUNCTION_END)
 		ERROR("Unterminated function definition\n");
 
 	/* Consume the closing brace */
@@ -427,7 +429,7 @@ main(int argc, char *argv[])
 		} else if (t->type == TOKEN_NUMBER) {
 			fprintf(stderr, "Number: %g\n", t->num);
 		} else if (t->type == TOKEN_FUNCTION) {
-			fprintf(stderr, "Operator\n");
+			fprintf(stderr, "Function: \n");
 		}
 		token_free(t);
 	}
