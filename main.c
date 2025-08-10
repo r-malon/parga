@@ -18,6 +18,7 @@ enum {
 	TOKEN_STRING = 'A',
 	TOKEN_NUMBER = '0',
 	TOKEN_FUNCTION = 'f',
+	TOKEN_STACK = 's',
 	TOKEN_CHAR = 'c',
 };
 
@@ -297,7 +298,7 @@ parse_stackstring(FILE *fp)
 	if (!t)
 		ERROR("Memory allocation failed\n");
 
-	t->type = TOKEN_STRING;
+	t->type = TOKEN_STACK;
 	t->next = NULL;
 
 	s = malloc(sizeof(Stack));
@@ -388,6 +389,29 @@ stack_free(Stack *s)
 		token_free(pop(s));
 }
 
+static void
+stack_reverse(Stack *s)
+{
+	Stack tmp;
+	Token *t;
+
+	t = malloc(sizeof(Token));
+	if (!t)
+		ERROR("Memory allocation failed\n");
+
+	tmp.top = NULL;
+	tmp.size = 0;
+	while (s->top != NULL) {
+		t = pop(s);
+		push(&tmp, t);
+	}
+	while (tmp.top != NULL) {
+		t = pop(&tmp);
+		push(s, t);
+	}
+	free(t);
+}
+
 int
 main(int argc, char *argv[])
 {
@@ -421,9 +445,10 @@ main(int argc, char *argv[])
 		t = pop(&stack);
 		push(&temp_stack, t);
 	}
+	stack_reverse(&stack);
 
-	while (temp_stack.top != NULL) {
-		t = pop(&temp_stack);
+	while (stack.top != NULL) {
+		t = pop(&stack);
 		if (t->type == TOKEN_STRING) {
 			fprintf(stderr, "String: '%s'\n", t->str);
 		} else if (t->type == TOKEN_NUMBER) {
