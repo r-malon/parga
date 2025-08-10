@@ -16,6 +16,7 @@ enum {
 	TOKEN_STRING = 'A',
 	TOKEN_NUMBER = '0',
 	TOKEN_FUNCTION = 'f',
+	TOKEN_CHAR = 'c',
 };
 
 typedef struct Token Token;
@@ -31,15 +32,19 @@ struct Token {
 	int type;
 	Token *next;
 	union {
+		char c;
 		char *str;
 		double num;
 		Stack *stack;
 	};
 };
 
+static int parse_until(FILE *, Stack *, int (*)(int));
+static Token *tokenize_char(char);
 static Token *parse_number(FILE *);
 static Token *parse_comment(FILE *);
 static Token *parse_string(FILE *);
+static Token *parse_stackstring(FILE *);
 static Token *parse_function(FILE *);
 static int char_to_digit(int, int);
 static void push(Stack *, Token *);
@@ -51,9 +56,10 @@ static ParseFunc jumptable[128] = {
 	['0' ... '9'] = parse_number,
 	['a' ... 'z'] = parse_function,
 	['A' ... 'Z'] = parse_function,
-	[STACKSTR_DELIM] = parse_string,
+	[STACKSTR_DELIM] = parse_stackstring,
 	[STR_DELIM] = parse_string,
 	[COMMENT_DELIM] = parse_comment,
+	['{'] = parse_function,
 	['+'] = parse_function,
 	['-'] = parse_function,
 	['*'] = parse_function,
@@ -86,13 +92,48 @@ char_to_digit(int c, int base)
 	return (digit < base) ? digit : -1;
 }
 
-static void
-parse_until(FILE *fp, Stack *s, int stop_char)
+static Token *
+tokenize_char(char c)
+{
+	Token *t;
+
+	t = malloc(sizeof(Token));
+	if (!t)
+		ERROR("Memory allocation failed\n");
+
+	t->type = TOKEN_CHAR;
+	t->next = NULL;
+	t->c = c;
+	return t;
+}
+
+static int
+stackstring_end(int c)
+{
+	return c == STACKSTR_DELIM;
+}
+
+static int
+function_end(int c)
+{
+	return c == '}';
+}
+
+static int
+parse_until(FILE *fp, Stack *s, int (*stop_cond)(int))
 {
 	int c;
 	Token *t;
 
-	while ((c = fgetc(fp)) != stop_char) {
+	while ((c = fgetc(fp)) != EOF) {
+		if (stop_cond && stop_cond(c)) {
+			ungetc(c, fp);
+			return c;
+		}
+		if (stop_cond == stackstring_end) {
+			push(s, tokenize_char(c));
+			continue;
+		}
 		if (isspace(c))
 			continue;
 
@@ -105,17 +146,18 @@ parse_until(FILE *fp, Stack *s, int stop_char)
 
 				/* Debug */
 				if (t->type == TOKEN_STRING) {
-					printf("Parsed string: '%s'\n", t->str);
+					fprintf(stderr, "Parsed string: '%s'\n", t->str);
 				} else if (t->type == TOKEN_NUMBER) {
-					printf("Parsed number: %g\n", t->num);
+					fprintf(stderr, "Parsed number: %g\n", t->num);
 				} else if (t->type == TOKEN_FUNCTION) {
-					printf("Parsed operator\n");
+					fprintf(stderr, "Parsed operator\n");
 				}
 			}
 		} else {
-			printf("Unrecognized character: %c (%d)\n", c, c);
+			fprintf(stderr, "Unrecognized character: %c (%d)\n", c, c);
 		}
 	}
+	return EOF;
 }
 
 static Token *
@@ -244,10 +286,41 @@ parse_string(FILE *fp)
 }
 
 static Token *
+parse_stackstring(FILE *fp)
+{
+	Token *t;
+	Stack *s;
+
+	t = malloc(sizeof(Token));
+	if (!t)
+		ERROR("Memory allocation failed\n");
+
+	t->type = TOKEN_STRING;
+	t->next = NULL;
+
+	s = malloc(sizeof(Stack));
+	if (!s) {
+		free(t);
+		ERROR("Memory allocation failed\n");
+	}
+	s->top = NULL;
+	s->size = 0;
+
+	if (parse_until(fp, s, stackstring_end) != STACKSTR_DELIM)
+		ERROR("Unterminated string literal\n");
+
+	/* Consume the closing brace */
+	fgetc(fp);
+
+	t->stack = s;
+	return t;
+}
+
+static Token *
 parse_function(FILE *fp)
 {
 	Token *t;
-	Stack *stack_body;
+	Stack *s;
 
 	t = malloc(sizeof(Token));
 	if (!t)
@@ -256,17 +329,21 @@ parse_function(FILE *fp)
 	t->type = TOKEN_FUNCTION;
 	t->next = NULL;
 
-	stack_body = malloc(sizeof(Stack));
-	if (!stack_body) {
+	s = malloc(sizeof(Stack));
+	if (!s) {
 		free(t);
 		ERROR("Memory allocation failed\n");
 	}
-	stack_body->top = NULL;
-	stack_body->size = 0;
+	s->top = NULL;
+	s->size = 0;
 
-	parse_until(fp, stack_body, '}');
+	if (parse_until(fp, s, function_end) != '}')
+		ERROR("Unterminated function definition\n");
 
-	t->stack = stack_body;
+	/* Consume the closing brace */
+	fgetc(fp);
+
+	t->stack = s;
 	return t;
 }
 
@@ -329,12 +406,12 @@ main(int argc, char *argv[])
 		fp = stdin;
 	}
 
-	parse_until(fp, &stack, EOF);
+	parse_until(fp, &stack, NULL);
 
 	if (fp != stdin)
 		fclose(fp);
 
-	printf("\nFinal stack contents:\n");
+	fprintf(stderr, "\nFinal stack contents:\n");
 	temp_stack.top = NULL;
 	temp_stack.size = 0;
 
@@ -346,11 +423,11 @@ main(int argc, char *argv[])
 	while (temp_stack.top != NULL) {
 		t = pop(&temp_stack);
 		if (t->type == TOKEN_STRING) {
-			printf("String: '%s'\n", t->str);
+			fprintf(stderr, "String: '%s'\n", t->str);
 		} else if (t->type == TOKEN_NUMBER) {
-			printf("Number: %g\n", t->num);
+			fprintf(stderr, "Number: %g\n", t->num);
 		} else if (t->type == TOKEN_FUNCTION) {
-			printf("Operator\n");
+			fprintf(stderr, "Operator\n");
 		}
 		token_free(t);
 	}
