@@ -1,5 +1,4 @@
 #include <ctype.h>
-#include <iso646.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -11,8 +10,15 @@
 #define STR_DELIM '\''
 #define STACKSTR_DELIM '"'
 #define COMMENT_DELIM '\\'
-#define MAX_STRING_LEN 1024
 #define ERROR(msg) do { fputs(msg, stderr); exit(EXIT_FAILURE); } while (0)
+
+#ifndef MAX_STRING_LEN
+#define MAX_STRING_LEN 1024
+#endif
+
+#ifndef MAX_NUMBER_LEN
+#define MAX_NUMBER_LEN 64
+#endif
 
 enum {
 	TOKEN_STRING = 'A',
@@ -123,6 +129,12 @@ function_end(int c)
 }
 
 static int
+symmetric_end(int c)
+{
+	return c == STACKSTR_DELIM || c == STR_DELIM || c == COMMENT_DELIM;
+}
+
+static int
 parse_until(FILE *fp, Stack *s, int (*stop_cond)(int))
 {
 	int c;
@@ -141,13 +153,13 @@ parse_until(FILE *fp, Stack *s, int (*stop_cond)(int))
 			continue;
 
 		if ((c >= 0 && c < 128 && jumptable[c] != NULL)) {
-			if (c != STACKSTR_DELIM && c != STR_DELIM && c != COMMENT_DELIM)
+			if (!symmetric_end(c))
 				ungetc(c, fp);
 
 			if ((t = jumptable[c](fp))) {
 				push(s, t);
 
-				/* Debug */
+			#if DEBUG
 				if (t->type == TOKEN_STRING) {
 					fprintf(stderr, "Parsed string: '%s'\n", t->str);
 				} else if (t->type == TOKEN_NUMBER) {
@@ -155,10 +167,14 @@ parse_until(FILE *fp, Stack *s, int (*stop_cond)(int))
 				} else if (t->type == TOKEN_FUNCTION) {
 					fprintf(stderr, "Parsed function\n");
 				}
+			#endif
 			}
-		} else {
+		}
+		#if DEBUG
+		else {
 			fprintf(stderr, "Unrecognized character: %c (%d)\n", c, c);
 		}
+		#endif
 	}
 	return EOF;
 }
@@ -168,7 +184,7 @@ parse_number(FILE *fp)
 {
 	int c, buf_pos, base, digit;
 	bool in_fractional;
-	char buffer[256], *hash_pos, *start_pos, *p;
+	char buffer[MAX_NUMBER_LEN], *hash_pos, *start_pos, *p;
 	double result, fractional_place;
 	Token *t;
 
@@ -187,7 +203,7 @@ parse_number(FILE *fp)
 	t->num = 0.0;
 
 	/* Read all characters that could be part of a number */
-	while ((c = fgetc(fp)) != EOF && buf_pos < 255) {
+	while ((c = fgetc(fp)) != EOF && buf_pos < MAX_NUMBER_LEN) {
 		if (isdigit(c) || isalpha(c) || c == '.' || c == '#') {
 			buffer[buf_pos++] = c;
 		} else {
@@ -202,7 +218,7 @@ parse_number(FILE *fp)
 		return NULL;
 	}
 
-	/* Check for base specification (Erlang-style: base#number) */
+	/* Base specification (Erlang-style: base#number) */
 	hash_pos = strchr(buffer, '#');
 	start_pos = buffer;
 
@@ -437,6 +453,7 @@ main(int argc, char *argv[])
 	if (fp != stdin)
 		fclose(fp);
 
+#if DEBUG
 	fprintf(stderr, "\nFinal stack contents:\n");
 	temp_stack.top = NULL;
 	temp_stack.size = 0;
@@ -458,6 +475,7 @@ main(int argc, char *argv[])
 		}
 		token_free(t);
 	}
+#endif
 
 	return 0;
 }
