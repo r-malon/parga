@@ -408,24 +408,10 @@ stack_free(Stack *s)
 static void
 stack_reverse(Stack *s)
 {
-	Stack tmp;
+	Stack tmp = { .top = NULL, .size = 0 };
 	Token *t;
-
-	t = malloc(sizeof(Token));
-	if (!t)
-		ERROR("Memory allocation failed\n");
-
-	tmp.top = NULL;
-	tmp.size = 0;
-	while (s->top != NULL) {
-		t = pop(s);
-		push(&tmp, t);
-	}
-	while (tmp.top != NULL) {
-		t = pop(&tmp);
-		push(s, t);
-	}
-	free(t);
+	while ((t = pop(s)) != NULL) push(&tmp, t);
+	while ((t = pop(&tmp)) != NULL) push(s, t);
 }
 
 int
