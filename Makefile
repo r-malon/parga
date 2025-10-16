@@ -8,6 +8,8 @@ OBJS = $(SRCS:.c=.o)
 
 all: $(PROG)
 
+main.o: parga.h
+
 .c.o:
 	$(CC) $(CFLAGS) $(CPPFLAGS) -c $<
 

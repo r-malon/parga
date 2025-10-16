@@ -5,84 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define FUNCTION_START '{'
-#define FUNCTION_END '}'
-#define STR_DELIM '\''
-#define STACKSTR_DELIM '"'
-#define COMMENT_DELIM '\\'
-#define ERROR(msg) do { fputs(msg, stderr); exit(EXIT_FAILURE); } while (0)
-
-#ifndef MAX_STRING_LEN
-#define MAX_STRING_LEN 1024
-#endif
-
-#ifndef MAX_NUMBER_LEN
-#define MAX_NUMBER_LEN 64
-#endif
-
-enum {
-	TOKEN_STRING = 'A',
-	TOKEN_NUMBER = '0',
-	TOKEN_FUNCTION = 'f',
-	TOKEN_STACK = 's',
-	TOKEN_CHAR = 'c',
-};
-
-typedef struct Token Token;
-typedef struct Stack Stack;
-typedef Token *(*ParseFunc)(FILE *);
-
-struct Stack {
-	Token *top;
-	size_t size;
-};
-
-struct Token {
-	int type;
-	Token *next;
-	union {
-		char c;
-		char *str;
-		double num;
-		Stack *stack;
-	};
-};
-
-static int parse_until(FILE *, Stack *, int (*)(int));
-static Token *tokenize_char(char);
-static Token *parse_number(FILE *);
-static Token *parse_comment(FILE *);
-static Token *parse_string(FILE *);
-static Token *parse_stackstring(FILE *);
-static Token *parse_function(FILE *);
-static int char_to_digit(int, int);
-static void push(Stack *, Token *);
-static Token *pop(Stack *);
-static void token_free(Token *);
-static void stack_free(Stack *);
-
-static ParseFunc jumptable[128] = {
-	['0' ... '9'] = parse_number,
-	['a' ... 'z'] = parse_function,
-	['A' ... 'Z'] = parse_function,
-	[STACKSTR_DELIM] = parse_stackstring,
-	[STR_DELIM] = parse_string,
-	[COMMENT_DELIM] = parse_comment,
-	[FUNCTION_START] = parse_function,
-	['+'] = parse_function,
-	['-'] = parse_function,
-	['*'] = parse_function,
-	['/'] = parse_function,
-	['%'] = parse_function,
-	['='] = parse_function,
-	['<'] = parse_function,
-	['>'] = parse_function,
-	['!'] = parse_function,
-	['&'] = parse_function,
-	['|'] = parse_function,
-	['^'] = parse_function,
-	['~'] = parse_function,
-};
+#include "parga.h"
 
 static int
 char_to_digit(int c, int base)
@@ -101,27 +24,6 @@ char_to_digit(int c, int base)
 	return (digit < base) ? digit : -1;
 }
 
-static Token *
-tokenize_char(char c)
-{
-	Token *t;
-
-	t = malloc(sizeof(Token));
-	if (!t)
-		ERROR("Memory allocation failed\n");
-
-	t->type = TOKEN_CHAR;
-	t->next = NULL;
-	t->c = c;
-	return t;
-}
-
-static int
-stackstring_end(int c)
-{
-	return c == STACKSTR_DELIM;
-}
-
 static int
 function_end(int c)
 {
@@ -131,7 +33,7 @@ function_end(int c)
 static int
 symmetric_end(int c)
 {
-	return c == STACKSTR_DELIM || c == STR_DELIM || c == COMMENT_DELIM;
+	return c == STR_DELIM || c == COMMENT_DELIM;
 }
 
 static int
@@ -144,10 +46,6 @@ parse_until(FILE *fp, Stack *s, int (*stop_cond)(int))
 		if (stop_cond && stop_cond(c)) {
 			ungetc(c, fp);
 			return c;
-		}
-		if (stop_cond == stackstring_end) {
-			push(s, tokenize_char(c));
-			continue;
 		}
 		if (isspace(c))
 			continue;
@@ -301,37 +199,6 @@ parse_string(FILE *fp)
 	}
 
 	strcpy(t->str, buffer);
-	return t;
-}
-
-static Token *
-parse_stackstring(FILE *fp)
-{
-	Token *t;
-	Stack *s;
-
-	t = malloc(sizeof(Token));
-	if (!t)
-		ERROR("Memory allocation failed\n");
-
-	t->type = TOKEN_STACK;
-	t->next = NULL;
-
-	s = malloc(sizeof(Stack));
-	if (!s) {
-		free(t);
-		ERROR("Memory allocation failed\n");
-	}
-	s->top = NULL;
-	s->size = 0;
-
-	if (parse_until(fp, s, stackstring_end) != STACKSTR_DELIM)
-		ERROR("Unterminated string literal\n");
-
-	/* Consume the closing quote */
-	fgetc(fp);
-
-	t->stack = s;
 	return t;
 }
 
