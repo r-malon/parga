@@ -68,11 +68,11 @@ parse_until(FILE *fp, Stack *s, int (*stop_cond)(int))
 			#endif
 			}
 		}
-		#if DEBUG
+	#if DEBUG
 		else {
 			fprintf(stderr, "Unrecognized character: %c (%d)\n", c, c);
 		}
-		#endif
+	#endif
 	}
 	return EOF;
 }
@@ -298,8 +298,7 @@ int
 main(int argc, char *argv[])
 {
 	FILE *fp;
-	Stack stack, temp_stack;
-	Token *t;
+	Stack stack;
 
 	stack.top = NULL;
 	stack.size = 0;
@@ -320,28 +319,17 @@ main(int argc, char *argv[])
 		fclose(fp);
 
 #if DEBUG
-	fprintf(stderr, "\nFinal stack contents:\n");
-	temp_stack.top = NULL;
-	temp_stack.size = 0;
-
-	while (stack.top != NULL) {
-		t = pop(&stack);
-		push(&temp_stack, t);
-	}
-	stack_reverse(&stack);
-
-	while (stack.top != NULL) {
-		t = pop(&stack);
-		if (t->type == TOKEN_STRING) {
-			fprintf(stderr, "String: '%s'\n", t->str);
-		} else if (t->type == TOKEN_NUMBER) {
-			fprintf(stderr, "Number: %g\n", t->num);
-		} else if (t->type == TOKEN_FUNCTION) {
-			fprintf(stderr, "Function: \n");
+	fprintf(stderr, "\nStack contents (top to bottom):\n");
+	for (Token *t = stack.top; t; t = t->next) {
+		switch (t->type) {
+		case TOKEN_STRING:   fprintf(stderr, "String: '%s'\n", t->str); break;
+		case TOKEN_NUMBER:   fprintf(stderr, "Number: %g\n", t->num); break;
+		case TOKEN_FUNCTION: fprintf(stderr, "Function\n"); break;
 		}
-		token_free(t);
 	}
 #endif
+
+	stack_free(&stack);
 
 	return 0;
 }
