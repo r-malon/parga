@@ -107,7 +107,7 @@ parse_number(FILE *fp)
 
 	t = malloc(sizeof(Token));
 	if (!t)
-		ERROR("Memory allocation failed\n");
+		ERROR("Memory allocation failed");
 
 	t->type = TOKEN_NUMBER;
 	t->next = NULL;
@@ -139,12 +139,12 @@ parse_number(FILE *fp)
 
 		for (p = buffer; *p; p++) {
 			if (!isdigit(*p))
-				ERROR("Invalid base specification\n");
+				ERROR("Invalid base specification");
 			base = base * 10 + (*p - '0');
 		}
 
 		if (base < 2 || base > 36)
-			ERROR("Base must be between 2 and 36\n");
+			ERROR("Base must be between 2 and 36");
 
 		start_pos = hash_pos + 1; /* Start parsing after the '#' */
 	}
@@ -152,14 +152,14 @@ parse_number(FILE *fp)
 	for (p = start_pos; *p; p++) {
 		if (*p == '.') {
 			if (in_fractional)
-				ERROR("Multiple decimal points in number\n");
+				ERROR("Multiple decimal points in number");
 			in_fractional = true;
 			continue;
 		}
 
 		digit = char_to_digit(*p, base);
 		if (digit == -1)
-			ERROR("Invalid digit for specified base\n");
+			ERROR("Invalid digit for specified base");
 
 		if (in_fractional) {
 			fractional_place /= base;
@@ -195,20 +195,20 @@ parse_string(FILE *fp)
 		buffer[i++] = c;
 
 	if (c != STR_DELIM)
-		ERROR("Unterminated string literal\n");
+		ERROR("Unterminated string literal");
 
 	buffer[i] = '\0';
 
 	t = malloc(sizeof(Token));
 	if (!t)
-		ERROR("Memory allocation failed\n");
+		ERROR("Memory allocation failed");
 
 	t->type = TOKEN_STRING;
 	t->next = NULL;
 	t->str = malloc(i + 1);
 	if (!t->str) {
 		free(t);
-		ERROR("Memory allocation failed\n");
+		ERROR("Memory allocation failed");
 	}
 
 	strcpy(t->str, buffer);
@@ -223,7 +223,7 @@ parse_function(FILE *fp)
 
 	t = malloc(sizeof(Token));
 	if (!t)
-		ERROR("Memory allocation failed\n");
+		ERROR("Memory allocation failed");
 
 	t->type = TOKEN_FUNCTION;
 	t->next = NULL;
@@ -231,13 +231,13 @@ parse_function(FILE *fp)
 	s = malloc(sizeof(Stack));
 	if (!s) {
 		free(t);
-		ERROR("Memory allocation failed\n");
+		ERROR("Memory allocation failed");
 	}
 	s->top = NULL;
 	s->size = 0;
 
 	if (parse_until(fp, s, function_end) != FUNCTION_END)
-		ERROR("Unterminated function definition\n");
+		ERROR("Unterminated function definition");
 
 	/* Consume the closing brace */
 	fgetc(fp);

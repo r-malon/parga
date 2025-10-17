@@ -5,7 +5,7 @@
 #define FUNCTION_END '}'
 #define STR_DELIM '\''
 #define COMMENT_DELIM '\\'
-#define ERROR(msg) do { fputs(msg, stderr); exit(EXIT_FAILURE); } while (0)
+#define ERROR(msg) do { fputs(msg "\n", stderr); exit(EXIT_FAILURE); } while (0)
 
 #ifndef MAX_STRING_LEN
 #define MAX_STRING_LEN 1024
