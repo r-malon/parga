@@ -22,8 +22,7 @@ static const unsigned char table[] = {
 int
 hash(unsigned char *key) {
 	unsigned char hash = 0;
-	int len = sizeof key / sizeof *key;
-	for (int i = 0; i < len; ++i)
-		hash = table[hash ^ key[i]];
+	while (*key)
+		hash = table[hash ^ *key++];
 	return hash;
 }
