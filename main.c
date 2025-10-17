@@ -78,6 +78,19 @@ parse_until(FILE *fp, Stack *s, int (*stop_cond)(int))
 }
 
 static Token *
+parse_hyphen(FILE *fp) {
+    int next = fgetc(fp);
+    if (isdigit(next)) {
+        ungetc(next, fp);
+        Token *n = parse_number(fp);
+        if (n) n->num = -n->num;
+        return n;
+    }
+    ungetc(next, fp);
+    return parse_function(fp);
+}
+
+static Token *
 parse_number(FILE *fp)
 {
 	int c, buf_pos, base, digit;

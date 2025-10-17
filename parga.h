@@ -43,6 +43,7 @@ struct Token {
 
 static int parse_until(FILE *, Stack *, int (*)(int));
 static Token *parse_number(FILE *);
+static Token *parse_hyphen(FILE *);
 static Token *parse_comment(FILE *);
 static Token *parse_string(FILE *);
 static Token *parse_function(FILE *);
@@ -60,7 +61,7 @@ static ParseFunc jumptable[128] = {
 	[COMMENT_DELIM] = parse_comment,
 	[FUNCTION_START] = parse_function,
 	['+'] = parse_function,
-	['-'] = parse_function,
+	['-'] = parse_hyphen,
 	['*'] = parse_function,
 	['/'] = parse_function,
 	['%'] = parse_function,
