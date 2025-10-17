@@ -51,7 +51,7 @@ parse_until(FILE *fp, Stack *s, int (*stop_cond)(int))
 			continue;
 
 		if ((c >= 0 && c < 128 && jumptable[c] != NULL)) {
-			if (!symmetric_end(c))
+			if (!symmetric_end(c) && c != '-')
 				ungetc(c, fp);
 
 			if ((t = jumptable[c](fp))) {
