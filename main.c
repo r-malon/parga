@@ -78,7 +78,8 @@ parse_until(FILE *fp, Stack *s, int (*stop_cond)(int))
 }
 
 static Token *
-parse_hyphen(FILE *fp) {
+parse_hyphen(FILE *fp)
+{
     int next = fgetc(fp);
     if (isdigit(next)) {
         ungetc(next, fp);
@@ -174,9 +175,9 @@ parse_number(FILE *fp)
 }
 
 static Token *
-parse_comment(FILE *fp) {
+parse_comment(FILE *fp)
+{
 	int c;
-
 	while ((c = fgetc(fp)) != EOF && c != COMMENT_DELIM);
 
 	return NULL;

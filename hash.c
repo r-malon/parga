@@ -20,7 +20,8 @@ static const unsigned char table[] = {
 };
 
 int
-hash(unsigned char *key) {
+hash(unsigned char *key)
+{
 	unsigned char hash = 0;
 	while (*key)
 		hash = table[hash ^ *key++];
