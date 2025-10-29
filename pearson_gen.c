@@ -1,64 +1,86 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <stdbool.h>
+#include <stdint.h>
 
-#ifndef MAX_ATTEMPTS
 #define MAX_ATTEMPTS 1000
-#endif
+#define MAX_KEYWORDS 256
+#define MAX_LINE 64
 
-static int table[256];
+static uint8_t table[256];
+static char keywords[MAX_KEYWORDS][MAX_LINE];
+static int n_keywords;
 
 /* Fisher–Yates shuffle */
-void
-shuffle(int *arr)
+static void
+shuffle(void)
 {
-	int j, tmp;
-	while (*arr++) {
-		j = arc4random_uniform(256);
-		tmp = arr[j];
-		arr[j] = *arr;
-		*arr = tmp;
+	int i, j;
+	uint8_t tmp;
+
+	for (i = 255; i > 0; i--) {
+		j = arc4random_uniform(i + 1);
+		tmp = table[j];
+		table[j] = table[i];
+		table[i] = tmp;
 	}
 }
 
-int
-hash(unsigned char *key)
+static uint8_t
+hash(const char *s)
 {
-	unsigned char hash = 0;
-	while (*key)
-		hash = table[hash ^ *key++];
-	return hash;
+	uint8_t h = 0;
+
+	while (*s)
+		h = table[h ^ (uint8_t)*s++];
+	return h;
+}
+
+static bool
+has_collision(void)
+{
+	bool seen[256] = {false};
+	uint8_t h;
+	int i;
+
+	for (i = 0; i < n_keywords; i++) {
+		h = hash(keywords[i]);
+		if (seen[h])
+			return true;
+		seen[h] = true;
+	}
+	return false;
 }
 
 int
-main(int argc, char *argv[])
+main(void)
 {
-	FILE *fp;
+	int i, n;
 
-	if (argc > 1) {
-		fp = fopen(argv[1], "r");
-		if (fp == NULL) {
-			fprintf(stderr, "Could not open file '%s'.\n", argv[1]);
-			return EXIT_FAILURE;
-		}
-	} else {
-		fp = stdin;
+	while (fgets(keywords[n_keywords], MAX_LINE, stdin)) {
+		keywords[n_keywords][strcspn(keywords[n_keywords], "\n")] = 0;
+		if (keywords[n_keywords][0])
+			n_keywords++;
 	}
 
-	if (fp != stdin)
-		fclose(fp);
+	for (i = 0; i < 256; i++) table[i] = i;
 
-	for (int i = 0; i < 256; i++)
-		table[i] = i;
+	for (n = 1; n <= MAX_ATTEMPTS; n++) {
+		shuffle();
+		if (!has_collision()) break;
+	}
 
-	shuffle(table);
-
-	for (int i = 0; i < 256; i++)
-		printf("%d, ", table[i]);
-
-	for (int n = 0; n < MAX_ATTEMPTS; n++) 
+	if (n > MAX_ATTEMPTS) {
+		fprintf(stderr, "Failed after %d attempts.\n", MAX_ATTEMPTS);
+		return 1;
+	}
 
 	printf("/* Collision-free table took %d attempts. */\n", n);
-	n == MAX_ATTEMPTS && puts("Failed to find a collision-free table after " #MAX_ATTEMPTS " attempts.");
+	puts("static const uint8_t table[] = {");
+	for (i = 0; i < 256; i++)
+		printf("%3u,%c", table[i], (i % 16 == 15) ? '\n' : ' ');
+	puts("};");
 
 	return 0;
 }
