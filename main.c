@@ -58,13 +58,7 @@ parse_until(FILE *fp, Stack *s, int (*stop_cond)(int))
 				push(s, t);
 
 			#if DEBUG
-				if (t->type == TOKEN_STRING) {
-					fprintf(stderr, "Parsed string: '%s'\n", t->str);
-				} else if (t->type == TOKEN_NUMBER) {
-					fprintf(stderr, "Parsed number: %g\n", t->num);
-				} else if (t->type == TOKEN_FUNCTION) {
-					fprintf(stderr, "Parsed function\n");
-				}
+				DEBUG_PRINT_TOKEN(t);
 			#endif
 			}
 		}
@@ -321,13 +315,7 @@ main(int argc, char *argv[])
 
 #if DEBUG
 	fprintf(stderr, "\nStack contents (top to bottom):\n");
-	for (Token *t = stack.top; t; t = t->next) {
-		switch (t->type) {
-		case TOKEN_STRING:   fprintf(stderr, "String: '%s'\n", t->str); break;
-		case TOKEN_NUMBER:   fprintf(stderr, "Number: %g\n", t->num); break;
-		case TOKEN_FUNCTION: fprintf(stderr, "Function\n"); break;
-		}
-	}
+	for (Token *t = stack.top; t; t = t->next) DEBUG_PRINT_TOKEN(t);
 #endif
 
 	stack_free(&stack);

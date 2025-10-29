@@ -3,6 +3,8 @@
 
 #define FUNCTION_START '{'
 #define FUNCTION_END '}'
+#define EFFECT_START '('
+#define EFFECT_END ')'
 #define STR_DELIM '\''
 #define COMMENT_DELIM '\\'
 #define ERROR(msg) do { fputs(msg "\n", stderr); exit(EXIT_FAILURE); } while (0)
@@ -14,6 +16,13 @@
 #ifndef MAX_NUMBER_LEN
 #define MAX_NUMBER_LEN 64
 #endif
+
+#define DEBUG_PRINT_TOKEN(t) \
+	switch ((t)->type) { \
+	case TOKEN_STRING:   fprintf(stderr, "String: '%s'\n", (t)->str); break; \
+	case TOKEN_NUMBER:   fprintf(stderr, "Number: %g\n", (t)->num); break; \
+	case TOKEN_FUNCTION: fprintf(stderr, "Function\n"); break; \
+	}
 
 enum {
 	TOKEN_STRING = 'A',
