@@ -2,13 +2,12 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
-#include <stdint.h>
 
 #define MAX_ATTEMPTS 1000
 #define MAX_KEYWORDS 256
 #define MAX_LINE 64
 
-static uint8_t table[256];
+static unsigned char table[256];
 static char keywords[MAX_KEYWORDS][MAX_LINE];
 static int n_keywords;
 
@@ -17,7 +16,7 @@ static void
 shuffle(void)
 {
 	int i, j;
-	uint8_t tmp;
+	unsigned char tmp;
 
 	for (i = 255; i > 0; i--) {
 		j = arc4random_uniform(i + 1);
@@ -27,13 +26,13 @@ shuffle(void)
 	}
 }
 
-static uint8_t
+static unsigned char
 hash(const char *s)
 {
-	uint8_t h = 0;
+	unsigned char h = 0;
 
 	while (*s)
-		h = table[h ^ (uint8_t)*s++];
+		h = table[h ^ (unsigned char)*s++];
 	return h;
 }
 
@@ -41,7 +40,7 @@ static bool
 has_collision(void)
 {
 	bool seen[256] = {false};
-	uint8_t h;
+	unsigned char h;
 	int i;
 
 	for (i = 0; i < n_keywords; i++) {
@@ -77,7 +76,7 @@ main(void)
 	}
 
 	printf("/* Collision-free table took %d attempts. */\n", n);
-	puts("static const uint8_t table[] = {");
+	puts("static const unsigned char table[] = {");
 	for (i = 0; i < 256; i++)
 		printf("%3u,%c", table[i], (i % 16 == 15) ? '\n' : ' ');
 	puts("};");

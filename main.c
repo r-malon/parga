@@ -25,9 +25,9 @@ char_to_digit(int c, int base)
 }
 
 static int
-function_end(int c)
+quote_end(int c)
 {
-	return c == FUNCTION_END;
+	return c == QUOTE_END;
 }
 
 static int
@@ -82,7 +82,7 @@ parse_hyphen(FILE *fp)
         return n;
     }
     ungetc(next, fp);
-    return parse_function(fp);
+    return parse_symbol(fp);
 }
 
 static Token *
@@ -90,7 +90,7 @@ parse_number(FILE *fp)
 {
 	int c, buf_pos, base, digit;
 	bool in_fractional;
-	char buffer[MAX_NUMBER_LEN], *hash_pos, *start_pos, *p;
+	char buffer[MAX_DIGITS], *hash_pos, *start_pos, *p;
 	double result, fractional_place;
 	Token *t;
 
@@ -109,7 +109,7 @@ parse_number(FILE *fp)
 	t->num = 0.0;
 
 	/* Read all characters that could be part of a number */
-	while ((c = fgetc(fp)) != EOF && buf_pos < MAX_NUMBER_LEN) {
+	while ((c = fgetc(fp)) != EOF && buf_pos < MAX_DIGITS) {
 		if (isdigit(c) || isalpha(c) || c == '.' || c == '#') {
 			buffer[buf_pos++] = c;
 		} else {
@@ -211,7 +211,7 @@ parse_string(FILE *fp)
 }
 
 static Token *
-parse_function(FILE *fp)
+parse_quote(FILE *fp)
 {
 	Token *t;
 	Stack *s;
@@ -220,7 +220,7 @@ parse_function(FILE *fp)
 	if (!t)
 		ERROR("Memory allocation failed");
 
-	t->type = TOKEN_FUNCTION;
+	t->type = TOKEN_QUOTE;
 	t->next = NULL;
 
 	s = malloc(sizeof(Stack));
@@ -231,8 +231,8 @@ parse_function(FILE *fp)
 	s->top = NULL;
 	s->size = 0;
 
-	if (parse_until(fp, s, function_end) != FUNCTION_END)
-		ERROR("Unterminated function definition");
+	if (parse_until(fp, s, quote_end) != QUOTE_END)
+		ERROR("Unterminated quote");
 
 	/* Consume the closing brace */
 	fgetc(fp);

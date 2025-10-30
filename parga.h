@@ -1,8 +1,8 @@
 #ifndef PARGA_H
 #define PARGA_H
 
-#define FUNCTION_START '{'
-#define FUNCTION_END '}'
+#define QUOTE_START '{'
+#define QUOTE_END '}'
 #define EFFECT_START '('
 #define EFFECT_END ')'
 #define STR_DELIM '\''
@@ -13,26 +13,28 @@
 #define MAX_STRING_LEN 1024
 #endif
 
-#ifndef MAX_NUMBER_LEN
-#define MAX_NUMBER_LEN 64
+#ifndef MAX_DIGITS
+#define MAX_DIGITS 64
 #endif
 
 #define DEBUG_PRINT_TOKEN(t) \
 	switch ((t)->type) { \
 	case TOKEN_STRING:   fprintf(stderr, "String: '%s'\n", (t)->str); break; \
 	case TOKEN_NUMBER:   fprintf(stderr, "Number: %g\n", (t)->num); break; \
-	case TOKEN_FUNCTION: fprintf(stderr, "Function\n"); break; \
+	case TOKEN_QUOTE: fprintf(stderr, "Function\n"); break; \
+	case TOKEN_SYMBOL: fprintf(stderr, "Symbol\n"); break; \
 	}
 
 enum {
 	TOKEN_STRING = 'A',
 	TOKEN_NUMBER = '0',
-	TOKEN_FUNCTION = 'f',
+	TOKEN_QUOTE = 'q',
+	TOKEN_SYMBOL = 's',
 };
 
 typedef struct Token Token;
 typedef struct Stack Stack;
-typedef Token *(*ParseFunc)(FILE *);
+typedef Token *(*Parser)(FILE *);
 
 struct Stack {
 	Token *top;
@@ -43,7 +45,7 @@ struct Token {
 	int type;
 	Token *next;
 	union {
-		char c;
+		char *symbol;
 		char *str;
 		double num;
 		Stack *stack;
@@ -55,33 +57,34 @@ static Token *parse_number(FILE *);
 static Token *parse_hyphen(FILE *);
 static Token *parse_comment(FILE *);
 static Token *parse_string(FILE *);
-static Token *parse_function(FILE *);
+static Token *parse_symbol(FILE *);
+static Token *parse_quote(FILE *);
 static int char_to_digit(int, int);
 static void push(Stack *, Token *);
 static Token *pop(Stack *);
 static void token_free(Token *);
 static void stack_free(Stack *);
 
-static ParseFunc jumptable[128] = {
+static Parser jumptable[128] = {
 	['0' ... '9'] = parse_number,
-	['a' ... 'z'] = parse_function,
-	['A' ... 'Z'] = parse_function,
+	['a' ... 'z'] = parse_symbol,
+	['A' ... 'Z'] = parse_symbol,
 	[STR_DELIM] = parse_string,
 	[COMMENT_DELIM] = parse_comment,
-	[FUNCTION_START] = parse_function,
-	['+'] = parse_function,
+	[QUOTE_START] = parse_quote,
+	['+'] = parse_symbol,
 	['-'] = parse_hyphen,
-	['*'] = parse_function,
-	['/'] = parse_function,
-	['%'] = parse_function,
-	['='] = parse_function,
-	['<'] = parse_function,
-	['>'] = parse_function,
-	['!'] = parse_function,
-	['&'] = parse_function,
-	['|'] = parse_function,
-	['^'] = parse_function,
-	['~'] = parse_function,
+	['*'] = parse_symbol,
+	['/'] = parse_symbol,
+	['%'] = parse_symbol,
+	['='] = parse_symbol,
+	['<'] = parse_symbol,
+	['>'] = parse_symbol,
+	['!'] = parse_symbol,
+	['&'] = parse_symbol,
+	['|'] = parse_symbol,
+	['^'] = parse_symbol,
+	['~'] = parse_symbol,
 };
 
 #endif /* PARGA_H */
