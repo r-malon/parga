@@ -72,20 +72,6 @@ parse_until(FILE *fp, Stack *s, int (*stop_cond)(int))
 }
 
 static Token *
-parse_hyphen(FILE *fp)
-{
-    int next = fgetc(fp);
-    if (isdigit(next)) {
-        ungetc(next, fp);
-        Token *n = parse_number(fp);
-        if (n) n->num = -n->num;
-        return n;
-    }
-    ungetc(next, fp);
-    return parse_symbol(fp);
-}
-
-static Token *
 parse_number(FILE *fp)
 {
 	int c, buf_pos, base, digit;
@@ -169,6 +155,20 @@ parse_number(FILE *fp)
 }
 
 static Token *
+parse_hyphen(FILE *fp)
+{
+    int next = fgetc(fp);
+    if (isdigit(next)) {
+        ungetc(next, fp);
+        Token *n = parse_number(fp);
+        if (n) n->num = -n->num;
+        return n;
+    }
+    ungetc(next, fp);
+    return parse_operator(fp);
+}
+
+static Token *
 parse_comment(FILE *fp)
 {
 	int c;
@@ -207,6 +207,58 @@ parse_string(FILE *fp)
 	}
 
 	strcpy(t->str, buffer);
+	return t;
+}
+
+static Token *
+parse_symbol(FILE *fp)
+{
+	int c, i;
+	char buffer[MAX_DIGITS];
+	Token *t;
+
+	i = 0;
+
+	while (isalpha((c = fgetc(fp))) && i < MAX_DIGITS - 1)
+		buffer[i++] = c;
+
+	buffer[i] = '\0';
+
+	t = malloc(sizeof(Token));
+	if (!t)
+		ERROR("Memory allocation failed");
+
+	t->type = TOKEN_SYMBOL;
+	t->next = NULL;
+	t->str = malloc(i + 1);
+	if (!t->str) {
+		free(t);
+		ERROR("Memory allocation failed");
+	}
+
+	strcpy(t->str, buffer);
+	return t;
+}
+
+static Token *
+parse_operator(FILE *fp)
+{
+	Token *t;
+
+	t = malloc(sizeof(Token));
+	if (!t)
+		ERROR("Memory allocation failed");
+
+	t->type = TOKEN_SYMBOL;
+	t->next = NULL;
+	t->str = malloc(2);
+	if (!t->str) {
+		free(t);
+		ERROR("Memory allocation failed");
+	}
+	t->str[0] = fgetc(fp);
+	t->str[1] = '\0';
+
 	return t;
 }
 

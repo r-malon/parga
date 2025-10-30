@@ -22,7 +22,7 @@
 	case TOKEN_STRING:   fprintf(stderr, "String: '%s'\n", (t)->str); break; \
 	case TOKEN_NUMBER:   fprintf(stderr, "Number: %g\n", (t)->num); break; \
 	case TOKEN_QUOTE:    fprintf(stderr, "Function\n"); break; \
-	case TOKEN_SYMBOL:   fprintf(stderr, "Symbol\n"); break; \
+	case TOKEN_SYMBOL:   fprintf(stderr, "Symbol: '%s'\n", (t)->str); break; \
 	}
 
 enum {
@@ -34,6 +34,7 @@ enum {
 
 typedef struct Token Token;
 typedef struct Stack Stack;
+typedef struct Symbol Symbol;
 typedef Token *(*Parser)(FILE *);
 
 struct Stack {
@@ -41,14 +42,20 @@ struct Stack {
 	size_t size;
 };
 
+struct Symbol {
+	char *str;
+	int arity;
+	unsigned char hash;
+};
+
 struct Token {
 	int type;
 	Token *next;
 	union {
-		char *symbol;
 		char *str;
 		double num;
 		Stack *stack;
+		Symbol symbol;
 	};
 };
 
@@ -58,6 +65,7 @@ static Token *parse_hyphen(FILE *);
 static Token *parse_comment(FILE *);
 static Token *parse_string(FILE *);
 static Token *parse_symbol(FILE *);
+static Token *parse_operator(FILE *);
 static Token *parse_quote(FILE *);
 static int char_to_digit(int, int);
 static void push(Stack *, Token *);
@@ -72,19 +80,19 @@ static Parser jumptable[128] = {
 	[STR_DELIM] = parse_string,
 	[COMMENT_DELIM] = parse_comment,
 	[QUOTE_START] = parse_quote,
-	['+'] = parse_symbol,
+	['+'] = parse_operator,
 	['-'] = parse_hyphen,
-	['*'] = parse_symbol,
-	['/'] = parse_symbol,
-	['%'] = parse_symbol,
-	['='] = parse_symbol,
-	['<'] = parse_symbol,
-	['>'] = parse_symbol,
-	['!'] = parse_symbol,
-	['&'] = parse_symbol,
-	['|'] = parse_symbol,
-	['^'] = parse_symbol,
-	['~'] = parse_symbol,
+	['*'] = parse_operator,
+	['/'] = parse_operator,
+	['%'] = parse_operator,
+	['='] = parse_operator,
+	['<'] = parse_operator,
+	['>'] = parse_operator,
+	['!'] = parse_operator,
+	['&'] = parse_operator,
+	['|'] = parse_operator,
+	['^'] = parse_operator,
+	['~'] = parse_operator,
 };
 
 #endif /* PARGA_H */
