@@ -327,10 +327,12 @@ pop(Stack *s)
 static void
 token_free(Token *t)
 {
-	if (!t)
-		return;
-	if (t->type == TOKEN_STRING && t->str != NULL)
-		free(t->str);
+	if (!t) return;
+
+	switch (t->type) {
+	case TOKEN_STRING: free(t->str); break;
+	case TOKEN_QUOTE: stack_free(t->stack); free(t->stack); break;
+	}
 	free(t);
 }
 
