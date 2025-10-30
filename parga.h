@@ -1,8 +1,8 @@
 #ifndef PARGA_H
 #define PARGA_H
 
-#define QUOTE_START '{'
-#define QUOTE_END '}'
+#define QUOTE_START '['
+#define QUOTE_END ']'
 #define EFFECT_START '('
 #define EFFECT_END ')'
 #define STR_DELIM '\''
@@ -21,8 +21,8 @@
 	switch ((t)->type) { \
 	case TOKEN_STRING:   fprintf(stderr, "String: '%s'\n", (t)->str); break; \
 	case TOKEN_NUMBER:   fprintf(stderr, "Number: %g\n", (t)->num); break; \
-	case TOKEN_QUOTE: fprintf(stderr, "Function\n"); break; \
-	case TOKEN_SYMBOL: fprintf(stderr, "Symbol\n"); break; \
+	case TOKEN_QUOTE:    fprintf(stderr, "Function\n"); break; \
+	case TOKEN_SYMBOL:   fprintf(stderr, "Symbol\n"); break; \
 	}
 
 enum {
