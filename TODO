@@ -1,0 +1,3 @@
+[ ] Implement stack effect
+[ ] Remove or fix symmetric_end logic to prevent parsing bugs
+[ ] Add proper token type for symbols/words to distinguish between function literals and operation names
