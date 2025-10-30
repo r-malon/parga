@@ -169,15 +169,6 @@ parse_hyphen(FILE *fp)
 }
 
 static Token *
-parse_comment(FILE *fp)
-{
-	int c;
-	while ((c = fgetc(fp)) != EOF && c != COMMENT_DELIM);
-
-	return NULL;
-}
-
-static Token *
 parse_string(FILE *fp)
 {
 	int c, i;
@@ -291,6 +282,24 @@ parse_quote(FILE *fp)
 
 	t->stack = s;
 	return t;
+}
+
+static Token *
+parse_effect(FILE *fp)
+{
+	int c;
+	while ((c = fgetc(fp)) != EOF && c != EFFECT_END);
+
+	return NULL;
+}
+
+static Token *
+parse_comment(FILE *fp)
+{
+	int c;
+	while ((c = fgetc(fp)) != EOF && c != COMMENT_DELIM);
+
+	return NULL;
 }
 
 static void

@@ -67,6 +67,7 @@ static Token *parse_string(FILE *);
 static Token *parse_symbol(FILE *);
 static Token *parse_operator(FILE *);
 static Token *parse_quote(FILE *);
+static Token *parse_effect(FILE *);
 static int char_to_digit(int, int);
 static void push(Stack *, Token *);
 static Token *pop(Stack *);
@@ -80,6 +81,7 @@ static Parser jumptable[128] = {
 	[STR_DELIM] = parse_string,
 	[COMMENT_DELIM] = parse_comment,
 	[QUOTE_START] = parse_quote,
+	[EFFECT_START] = parse_effect,
 	['+'] = parse_operator,
 	['-'] = parse_hyphen,
 	['*'] = parse_operator,
