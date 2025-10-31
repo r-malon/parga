@@ -31,30 +31,19 @@ quote_end(int c)
 }
 
 static int
-symmetric_end(int c)
-{
-	return c == STR_DELIM || c == COMMENT_DELIM;
-}
-
-static int
 parse_until(FILE *fp, Stack *s, int (*stop_cond)(int))
 {
 	int c;
 	Token *t;
 
 	while ((c = fgetc(fp)) != EOF) {
-		if (stop_cond && stop_cond(c)) {
-			ungetc(c, fp);
+		if (stop_cond && stop_cond(c))
 			return c;
-		}
 		if (isspace(c))
 			continue;
 
 		if ((c >= 0 && c < 128 && jumptable[c] != NULL)) {
-			if (!symmetric_end(c) && c != '-')
-				ungetc(c, fp);
-
-			if ((t = jumptable[c](fp))) {
+			if ((t = jumptable[c](fp, c))) {
 				push(s, t);
 
 			#if DEBUG
@@ -72,7 +61,7 @@ parse_until(FILE *fp, Stack *s, int (*stop_cond)(int))
 }
 
 static Token *
-parse_number(FILE *fp)
+parse_number(FILE *fp, int consumed)
 {
 	int c, buf_pos, base, digit;
 	bool in_fractional;
@@ -80,7 +69,8 @@ parse_number(FILE *fp)
 	double result, fractional_place;
 	Token *t;
 
-	buf_pos = 0;
+	buffer[0] = consumed;
+	buf_pos = 1;
 	base = 10;
 	result = 0.0;
 	fractional_place = 1.0;
@@ -104,11 +94,6 @@ parse_number(FILE *fp)
 		}
 	}
 	buffer[buf_pos] = '\0';
-
-	if (buf_pos == 0) {
-		free(t);
-		return NULL;
-	}
 
 	/* Base specification (Erlang-style: base#number) */
 	hash_pos = strchr(buffer, '#');
@@ -155,22 +140,22 @@ parse_number(FILE *fp)
 }
 
 static Token *
-parse_hyphen(FILE *fp)
+parse_hyphen(FILE *fp, int consumed)
 {
     int next = fgetc(fp);
     if (isdigit(next)) {
-        ungetc(next, fp);
-        Token *n = parse_number(fp);
-        if (n) n->num = -n->num;
-        return n;
+        Token *t = parse_number(fp, next);
+        if (t) t->num = -t->num;
+        return t;
     }
     ungetc(next, fp);
-    return parse_operator(fp);
+    return parse_operator(NULL, consumed);
 }
 
 static Token *
-parse_string(FILE *fp)
+parse_string(FILE *fp, int consumed)
 {
+	UNUSED(consumed);
 	int c, i;
 	char buffer[MAX_STRING_LEN];
 	Token *t;
@@ -202,16 +187,19 @@ parse_string(FILE *fp)
 }
 
 static Token *
-parse_symbol(FILE *fp)
+parse_symbol(FILE *fp, int consumed)
 {
 	int c, i;
 	char buffer[MAX_DIGITS];
 	Token *t;
 
-	i = 0;
+	i = 1;
+	buffer[0] = consumed;
 
 	while (isalpha((c = fgetc(fp))) && i < MAX_DIGITS - 1)
 		buffer[i++] = c;
+
+	if (c != EOF) ungetc(c, fp);
 
 	buffer[i] = '\0';
 
@@ -232,8 +220,9 @@ parse_symbol(FILE *fp)
 }
 
 static Token *
-parse_operator(FILE *fp)
+parse_operator(FILE *fp, int consumed)
 {
+	UNUSED(fp);
 	Token *t;
 
 	t = malloc(sizeof(Token));
@@ -247,15 +236,16 @@ parse_operator(FILE *fp)
 		free(t);
 		ERROR("Memory allocation failed");
 	}
-	t->str[0] = fgetc(fp);
+	t->str[0] = consumed;
 	t->str[1] = '\0';
 
 	return t;
 }
 
 static Token *
-parse_quote(FILE *fp)
+parse_quote(FILE *fp, int consumed)
 {
+	UNUSED(consumed);
 	Token *t;
 	Stack *s;
 
@@ -277,16 +267,14 @@ parse_quote(FILE *fp)
 	if (parse_until(fp, s, quote_end) != QUOTE_END)
 		ERROR("Unterminated quote");
 
-	/* Consume the closing brace */
-	fgetc(fp);
-
 	t->stack = s;
 	return t;
 }
 
 static Token *
-parse_effect(FILE *fp)
+parse_effect(FILE *fp, int consumed)
 {
+	UNUSED(consumed);
 	int c;
 	while ((c = fgetc(fp)) != EOF && c != EFFECT_END);
 
@@ -294,8 +282,9 @@ parse_effect(FILE *fp)
 }
 
 static Token *
-parse_comment(FILE *fp)
+parse_comment(FILE *fp, int consumed)
 {
+	UNUSED(consumed);
 	int c;
 	while ((c = fgetc(fp)) != EOF && c != COMMENT_DELIM);
 

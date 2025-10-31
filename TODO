@@ -1,3 +1,8 @@
-[ ] Implement stack effect
-[ ] Remove or fix symmetric_end logic to prevent parsing bugs
-[ ] Add proper token type for symbols/words to distinguish between function literals and operation names
+[x] Implement stack effect
+[x] Each parser owns the consumed character passed to it,
+    and must put back any characters it reads but doesn't want
+[ ] Add proper token type for symbols/words to distinguish between
+    function literals and operation names
+[ ] Fuzz test
+[ ] Implement evaluator
+[ ] Implement built-ins

@@ -8,6 +8,7 @@
 #define STR_DELIM '\''
 #define COMMENT_DELIM '\\'
 #define ERROR(msg) do { fputs(msg "\n", stderr); exit(EXIT_FAILURE); } while (0)
+#define UNUSED(x) (void)(x)
 
 #ifndef MAX_STRING_LEN
 #define MAX_STRING_LEN 1024
@@ -35,7 +36,7 @@ enum {
 typedef struct Token Token;
 typedef struct Stack Stack;
 typedef struct Symbol Symbol;
-typedef Token *(*Parser)(FILE *);
+typedef Token *(*Parser)(FILE *, int);
 
 struct Stack {
 	Token *top;
@@ -60,14 +61,14 @@ struct Token {
 };
 
 static int parse_until(FILE *, Stack *, int (*)(int));
-static Token *parse_number(FILE *);
-static Token *parse_hyphen(FILE *);
-static Token *parse_comment(FILE *);
-static Token *parse_string(FILE *);
-static Token *parse_symbol(FILE *);
-static Token *parse_operator(FILE *);
-static Token *parse_quote(FILE *);
-static Token *parse_effect(FILE *);
+static Token *parse_number(FILE *, int);
+static Token *parse_hyphen(FILE *, int);
+static Token *parse_comment(FILE *, int);
+static Token *parse_string(FILE *, int);
+static Token *parse_symbol(FILE *, int);
+static Token *parse_operator(FILE *, int);
+static Token *parse_quote(FILE *, int);
+static Token *parse_effect(FILE *, int);
 static int char_to_digit(int, int);
 static void push(Stack *, Token *);
 static Token *pop(Stack *);
