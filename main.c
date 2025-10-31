@@ -1,6 +1,5 @@
 #include <ctype.h>
 #include <stdbool.h>
-#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -85,8 +84,8 @@ parse_number(FILE *fp, int consumed)
 	t->num = 0.0;
 
 	/* Read all characters that could be part of a number */
-	while ((c = fgetc(fp)) != EOF && buf_pos < MAX_DIGITS) {
-		if (isdigit(c) || isalpha(c) || c == '.' || c == '#') {
+	while ((c = fgetc(fp)) != EOF && buf_pos < MAX_DIGITS - 1) {
+		if (isalnum(c) || c == '.' || c == '#') {
 			buffer[buf_pos++] = c;
 		} else {
 			ungetc(c, fp);
