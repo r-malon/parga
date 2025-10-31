@@ -105,14 +105,14 @@ parse_number(FILE *fp, int consumed)
 
 		for (p = buffer; *p; p++) {
 			if (!isdigit(*p))
-				ERROR("Invalid base specification");
+				ERROR("Invalid base");
 			base = base * 10 + (*p - '0');
 		}
 
 		if (base < 2 || base > 36)
-			ERROR("Base must be between 2 and 36");
+			ERROR("Base must be between 2 and 36: %d", base);
 
-		start_pos = hash_pos + 1; /* Start parsing after the '#' */
+		start_pos = hash_pos + 1; /* Start parsing after '#' */
 	}
 
 	for (p = start_pos; *p; p++) {
@@ -125,7 +125,7 @@ parse_number(FILE *fp, int consumed)
 
 		digit = char_to_digit(*p, base);
 		if (digit == -1)
-			ERROR("Invalid digit for specified base");
+			ERROR("Invalid digit for base %d: %c", base, *p);
 
 		if (in_fractional) {
 			fractional_place /= base;

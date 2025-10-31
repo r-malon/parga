@@ -7,7 +7,9 @@
 #define EFFECT_END ')'
 #define STR_DELIM '\''
 #define COMMENT_DELIM '\\'
-#define ERROR(msg) do { fputs(msg "\n", stderr); exit(EXIT_FAILURE); } while (0)
+#define ERROR(...) do { \
+	fprintf(stderr, __VA_ARGS__); fputc('\n', stderr); exit(EXIT_FAILURE); \
+} while (0)
 #define UNUSED(x) (void)(x)
 
 #ifndef MAX_STRING_LEN
@@ -22,7 +24,7 @@
 	switch ((t)->type) { \
 	case TOKEN_STRING:   fprintf(stderr, "String: '%s'\n", (t)->str); break; \
 	case TOKEN_NUMBER:   fprintf(stderr, "Number: %g\n", (t)->num); break; \
-	case TOKEN_QUOTE:    fprintf(stderr, "Function\n"); break; \
+	case TOKEN_QUOTE:    fprintf(stderr, "Quote\n"); break; \
 	case TOKEN_SYMBOL:   fprintf(stderr, "Symbol: '%s'\n", (t)->str); break; \
 	}
 
