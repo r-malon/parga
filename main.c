@@ -141,14 +141,14 @@ parse_number(FILE *fp, int consumed)
 static Token *
 parse_hyphen(FILE *fp, int consumed)
 {
-    int next = fgetc(fp);
-    if (isdigit(next)) {
-        Token *t = parse_number(fp, next);
-        if (t) t->num = -t->num;
-        return t;
-    }
-    ungetc(next, fp);
-    return parse_operator(NULL, consumed);
+	int next = fgetc(fp);
+	if (isdigit(next)) {
+		Token *t = parse_number(fp, next);
+		if (t) t->num = -t->num;
+		return t;
+	}
+	ungetc(next, fp);
+	return parse_operator(NULL, consumed);
 }
 
 static Token *
@@ -161,8 +161,11 @@ parse_string(FILE *fp, int consumed)
 
 	i = 0;
 
-	while ((c = fgetc(fp)) != EOF && c != STR_DELIM && i < MAX_STRING_LEN - 1)
+	while ((c = fgetc(fp)) != EOF && c != STR_DELIM && i < MAX_STRING_LEN - 1) {
+		if (c == ESCAPE_CHAR)
+			c = fgetc(fp);
 		buffer[i++] = c;
+	}
 
 	if (c != STR_DELIM)
 		ERROR("Unterminated string literal");
@@ -195,7 +198,7 @@ parse_symbol(FILE *fp, int consumed)
 	i = 1;
 	buffer[0] = consumed;
 
-	while (isalpha((c = fgetc(fp))) && i < MAX_DIGITS - 1)
+	while (isalnum((c = fgetc(fp))) && i < MAX_DIGITS - 1)
 		buffer[i++] = c;
 
 	if (c != EOF) ungetc(c, fp);

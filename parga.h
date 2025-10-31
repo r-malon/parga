@@ -7,6 +7,7 @@
 #define EFFECT_END ')'
 #define STR_DELIM '\''
 #define COMMENT_DELIM '\\'
+#define ESCAPE_CHAR '\\'
 #define ERROR(...) do { \
 	fprintf(stderr, __VA_ARGS__); fputc('\n', stderr); exit(EXIT_FAILURE); \
 } while (0)
