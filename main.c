@@ -319,6 +319,7 @@ token_free(Token *t)
 	if (!t) return;
 
 	switch (t->type) {
+	case TOKEN_SYMBOL:
 	case TOKEN_STRING: free(t->str); break;
 	case TOKEN_QUOTE: stack_free(t->stack); free(t->stack); break;
 	}

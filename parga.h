@@ -35,18 +35,11 @@ enum {
 
 typedef struct Token Token;
 typedef struct Stack Stack;
-typedef struct Symbol Symbol;
 typedef Token *(*Parser)(FILE *, int);
 
 struct Stack {
 	Token *top;
 	size_t size;
-};
-
-struct Symbol {
-	char *str;
-	int arity;
-	unsigned char hash;
 };
 
 struct Token {
@@ -56,7 +49,6 @@ struct Token {
 		char *str;
 		double num;
 		Stack *stack;
-		Symbol symbol;
 	};
 };
 
