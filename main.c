@@ -64,7 +64,7 @@ parse_number(FILE *fp, int consumed)
 {
 	int c, buf_pos, base, digit;
 	bool in_fractional;
-	char buffer[MAX_DIGITS], *hash_pos, *start_pos, *p;
+	char buffer[MAX_DIGITS + 1], *hash_pos, *start_pos, *p;
 	double result, fractional_place;
 	Token *t;
 
@@ -84,7 +84,7 @@ parse_number(FILE *fp, int consumed)
 	t->num = 0.0;
 
 	/* Read all characters that could be part of a number */
-	while ((c = fgetc(fp)) != EOF && buf_pos < MAX_DIGITS - 1) {
+	while ((c = fgetc(fp)) != EOF && buf_pos < MAX_DIGITS) {
 		if (isalnum(c) || c == '.' || c == '#') {
 			buffer[buf_pos++] = c;
 		} else {
@@ -156,12 +156,12 @@ parse_string(FILE *fp, int consumed)
 {
 	UNUSED(consumed);
 	int c, i;
-	char buffer[MAX_STRING_LEN];
+	char buffer[MAX_STRING_LEN + 1];
 	Token *t;
 
 	i = 0;
 
-	while ((c = fgetc(fp)) != EOF && c != STR_DELIM && i < MAX_STRING_LEN - 1) {
+	while ((c = fgetc(fp)) != EOF && c != STR_DELIM && i < MAX_STRING_LEN) {
 		if (c == ESCAPE_CHAR)
 			c = fgetc(fp);
 		buffer[i++] = c;
@@ -192,13 +192,13 @@ static Token *
 parse_symbol(FILE *fp, int consumed)
 {
 	int c, i;
-	char buffer[MAX_DIGITS];
+	char buffer[MAX_DIGITS + 1];
 	Token *t;
 
 	i = 1;
 	buffer[0] = consumed;
 
-	while (isalnum((c = fgetc(fp))) && i < MAX_DIGITS - 1)
+	while (isalnum((c = fgetc(fp))) && i < MAX_DIGITS)
 		buffer[i++] = c;
 
 	if (c != EOF) ungetc(c, fp);
