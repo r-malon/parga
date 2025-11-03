@@ -75,7 +75,7 @@ parse_number(FILE *fp, int consumed)
 	fractional_place = 1.0;
 	in_fractional = false;
 
-	t = malloc(sizeof(Token));
+	t = malloc(sizeof (Token));
 	if (!t)
 		ERROR("Memory allocation failed");
 
@@ -172,7 +172,7 @@ parse_string(FILE *fp, int consumed)
 
 	buffer[i] = '\0';
 
-	t = malloc(sizeof(Token));
+	t = malloc(sizeof (Token));
 	if (!t)
 		ERROR("Memory allocation failed");
 
@@ -201,11 +201,12 @@ parse_symbol(FILE *fp, int consumed)
 	while (isalnum((c = fgetc(fp))) && i < MAX_DIGITS)
 		buffer[i++] = c;
 
-	if (c != EOF) ungetc(c, fp);
+	if (c != EOF)
+		ungetc(c, fp);
 
 	buffer[i] = '\0';
 
-	t = malloc(sizeof(Token));
+	t = malloc(sizeof (Token));
 	if (!t)
 		ERROR("Memory allocation failed");
 
@@ -227,7 +228,7 @@ parse_operator(FILE *fp, int consumed)
 	UNUSED(fp);
 	Token *t;
 
-	t = malloc(sizeof(Token));
+	t = malloc(sizeof (Token));
 	if (!t)
 		ERROR("Memory allocation failed");
 
@@ -251,14 +252,14 @@ parse_quote(FILE *fp, int consumed)
 	Token *t;
 	Stack *s;
 
-	t = malloc(sizeof(Token));
+	t = malloc(sizeof (Token));
 	if (!t)
 		ERROR("Memory allocation failed");
 
 	t->type = TOKEN_QUOTE;
 	t->next = NULL;
 
-	s = malloc(sizeof(Stack));
+	s = malloc(sizeof (Stack));
 	if (!s) {
 		free(t);
 		ERROR("Memory allocation failed");
